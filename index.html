@@ -1,165 +1,778 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a472a">
+<title>Tournoi Football</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231a472a'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E">
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: var(--font-sans); font-size: 16px; }
-  .container { padding: 0.75rem 0; }
-  
-  /* Tabs */
-  .tabs { display: flex; gap: 6px; background: var(--color-background-secondary); padding: 4px; border-radius: var(--border-radius-md); margin-bottom: 1rem; }
-  .tab-btn { flex: 1; padding: 10px 8px; border: none; background: transparent; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--color-text-secondary); transition: all 0.15s; }
-  .tab-btn.active { background: var(--color-background-primary); color: var(--color-text-primary); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  
-  /* Match list */
-  .matches-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
-  .match-summary { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px; cursor: pointer; transition: all 0.15s; }
-  .match-summary:hover { border-color: var(--color-border-secondary); }
-  .match-summary.active { border: 2px solid var(--color-border-info); padding: 11px; }
-  .match-summary.completed { background: var(--color-background-secondary); }
-  .match-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .match-num { font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-  .match-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
-  .status-pending { background: var(--color-background-warning); color: var(--color-text-warning); }
-  .status-done { background: var(--color-background-success); color: var(--color-text-success); }
-  .match-teams { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .match-team { font-size: 15px; font-weight: 500; flex: 1; }
-  .match-team.left { text-align: right; }
-  .match-team.right { text-align: left; }
-  .match-team.winner { color: var(--color-text-primary); }
-  .match-team.loser { color: var(--color-text-tertiary); }
-  .match-score { font-size: 22px; font-weight: 500; padding: 0 4px; min-width: 70px; text-align: center; }
-  .match-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--color-border-tertiary); }
-  .match-actions button { flex: 1; padding: 6px; font-size: 12px; border: 0.5px solid var(--color-border-tertiary); background: transparent; border-radius: 6px; cursor: pointer; color: var(--color-text-secondary); }
-  .match-actions button.danger { color: var(--color-text-danger); border-color: var(--color-border-danger); }
-  
-  /* Match editor */
-  .editor { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
-  .editor-title { font-size: 16px; font-weight: 500; margin: 0 0 1rem 0; }
-  .team-selectors { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 1rem; }
-  .vs-text { font-size: 12px; color: var(--color-text-secondary); }
-  select { width: 100%; padding: 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 14px; background: var(--color-background-primary); color: var(--color-text-primary); }
-  select:focus { outline: none; border-color: var(--color-border-info); }
-  
-  /* Live score */
-  .live-score { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 14px 12px; margin-bottom: 1rem; }
-  .live-score-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
-  .live-team-name { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
-  .live-team-left { text-align: right; }
-  .live-team-right { text-align: left; }
-  .live-score-value { font-size: 36px; font-weight: 500; line-height: 1; }
-  .live-divider { font-size: 18px; color: var(--color-text-tertiary); padding: 0 8px; }
-  
-  /* Team counter blocks */
-  .team-block { margin-bottom: 12px; }
-  .team-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 2px; }
-  .team-block-name { font-size: 14px; font-weight: 500; }
-  .team-block-ratio { font-size: 11px; color: var(--color-text-secondary); }
-  .team-block-ratio.bonus { color: var(--color-text-success); font-weight: 500; }
-  .counters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .counter { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 6px; text-align: center; position: relative; overflow: hidden; }
-  .counter-label { font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
-  .counter-value { font-size: 22px; font-weight: 500; margin-bottom: 6px; min-height: 26px; }
-  .counter-buttons { display: flex; gap: 4px; justify-content: center; }
-  .counter-btn { width: 28px; height: 28px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; color: var(--color-text-primary); padding: 0; }
-  .counter-btn:hover { background: var(--color-background-tertiary); }
-  .counter-btn:active { transform: scale(0.92); }
-  .counter.goal { background: var(--color-background-success); }
-  .counter.goal .counter-label, .counter.goal .counter-value { color: var(--color-text-success); }
-  
-  /* Result selector */
-  .result-section { margin-top: 1rem; padding-top: 1rem; border-top: 0.5px solid var(--color-border-tertiary); }
-  .result-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .result-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .result-btn { padding: 10px 6px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); border-radius: var(--border-radius-md); font-size: 12px; font-weight: 500; cursor: pointer; color: var(--color-text-primary); line-height: 1.3; }
-  .result-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
-  
-  /* Add button */
-  .btn-add { width: 100%; padding: 14px; background: var(--color-background-info); color: var(--color-text-info); border: 0.5px solid var(--color-border-info); border-radius: var(--border-radius-md); font-weight: 500; cursor: pointer; font-size: 14px; }
-  .btn-add:hover { background: var(--color-background-secondary); }
-  
-  /* Ranking */
-  .ranking-header { display: grid; grid-template-columns: 32px 1fr 36px 36px 36px 36px 36px; gap: 6px; padding: 8px 4px; font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 500; border-bottom: 0.5px solid var(--color-border-secondary); }
-  .ranking-row { display: grid; grid-template-columns: 32px 1fr 36px 36px 36px 36px 36px; gap: 6px; padding: 12px 4px; border-bottom: 0.5px solid var(--color-border-tertiary); align-items: center; font-size: 13px; }
-  .ranking-row:last-child { border-bottom: none; }
-  .rank-pos { font-size: 16px; font-weight: 500; }
-  .rank-pos.top1 { color: var(--color-text-warning); }
-  .rank-pos.top2 { color: var(--color-text-secondary); }
-  .rank-pos.top3 { color: var(--color-text-warning); opacity: 0.7; }
-  .rank-team { font-size: 14px; font-weight: 500; }
-  .rank-cell { text-align: center; font-variant-numeric: tabular-nums; }
-  .rank-cell.pts { font-weight: 500; font-size: 15px; }
-  
-  /* Empty state */
-  .empty-state { padding: 2rem 1rem; text-align: center; color: var(--color-text-secondary); font-size: 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
-  
-  /* Stats summary */
-  .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
-  .stat-summary { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px; text-align: center; }
-  .stat-summary-label { font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
-  .stat-summary-value { font-size: 18px; font-weight: 500; }
-  
+  :root {
+    --green-dark: #1a472a;
+    --green: #2d6a4f;
+    --green-light: #52b788;
+    --green-bg: #f0f7f4;
+    --red: #c1121f;
+    --amber: #f4a261;
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface-2: #f0f0f3;
+    --text: #1c1c1e;
+    --text-2: #6e6e73;
+    --text-3: #a0a0a5;
+    --border: #e5e5e7;
+    --border-strong: #d1d1d6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.4;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--bg);
+  }
+
   /* Header */
-  .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-  .app-title { font-size: 18px; font-weight: 500; margin: 0; }
-  .app-subtitle { font-size: 12px; color: var(--color-text-secondary); margin: 2px 0 0 0; }
-  .reset-btn { padding: 6px 10px; background: transparent; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; font-size: 11px; cursor: pointer; color: var(--color-text-secondary); }
+  .header {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
+    color: white;
+    padding: calc(var(--safe-top) + 16px) 20px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+  .header-icon { font-size: 26px; }
+  .header-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .icon-btn:active { background: rgba(255,255,255,0.3); }
+  .header-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .header-stat { display: flex; align-items: center; gap: 4px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .tab.active { color: var(--green); }
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: var(--green);
+    border-radius: 3px 3px 0 0;
+  }
+  .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px calc(var(--safe-bottom) + 20px);
+  }
+  .tab-content { display: none; animation: fadeIn 0.2s; }
+  .tab-content.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-padding { padding: 16px; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-2);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .empty-text { font-size: 14px; }
+
+  /* Team selectors */
+  .team-versus {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .team-select-wrap {
+    position: relative;
+  }
+  select {
+    width: 100%;
+    padding: 12px 32px 12px 14px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3e%3cpath fill='%236e6e73' d='M6 8L2 4h8z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .vs-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-2);
+    padding: 0 4px;
+  }
+
+  /* Live score */
+  .live-score {
+    background: linear-gradient(135deg, var(--green-dark), var(--green));
+    color: white;
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .live-score::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
+  }
+  .live-score-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+  .score-team-block { text-align: center; }
+  .score-team-name {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 6px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .score-value {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-divider {
+    font-size: 28px;
+    opacity: 0.5;
+    padding: 0 12px;
+    font-weight: 300;
+  }
+  .live-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 12px;
+    opacity: 0.85;
+  }
+  .live-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .live-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+  .live-meta-value { font-weight: 600; font-size: 13px; }
+  .bonus-active { color: var(--gold); font-weight: 700; }
+
+  /* Team counters */
+  .team-section {
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .team-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .team-section-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .team-section-ratio {
+    font-size: 11px;
+    color: var(--text-2);
+    background: var(--surface);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .team-section-ratio.bonus {
+    background: var(--green);
+    color: white;
+  }
+  .counters {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .counter {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .counter.but {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  }
+  .counter-icon { font-size: 18px; margin-bottom: 2px; }
+  .counter-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+  .counter.but .counter-label { color: var(--green-dark); }
+  .counter-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .counter.but .counter-value { color: var(--green-dark); }
+  .counter-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+  .counter-btn {
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.1s;
+  }
+  .counter-btn:active {
+    transform: scale(0.9);
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .counter.but .counter-btn { border-color: var(--green); }
+  .counter.but .counter-btn:active { background: var(--green-dark); }
+
+  /* Result buttons */
+  .result-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .result-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-2);
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
+  }
+  .result-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .result-btn {
+    padding: 14px 6px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .result-btn:active { transform: scale(0.97); }
+  .result-btn.active {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+    box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
+  }
+
+  /* Action buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(45, 106, 79, 0.25);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* Match list item */
+  .match-item {
+    background: var(--surface);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    position: relative;
+    border: 2px solid transparent;
+  }
+  .match-item.active {
+    border-color: var(--green);
+  }
+  .match-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px 8px;
+    background: var(--surface-2);
+  }
+  .match-item-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .match-item-status {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-done { background: #d1fae5; color: #065f46; }
+  .match-item-body {
+    padding: 14px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .match-team-side {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .match-team-side.winner { color: var(--green); }
+  .match-team-side.loser { color: var(--text-3); }
+  .match-score-display {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    padding: 0 8px;
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+    text-align: center;
+  }
+  .match-item-actions {
+    display: flex;
+    border-top: 1px solid var(--border);
+  }
+  .match-item-actions button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-2);
+  }
+  .match-item-actions button.danger { color: var(--red); }
+  .match-item-actions button + button { border-left: 1px solid var(--border); }
+
+  /* Ranking */
+  .ranking-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .ranking-header-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 38px 30px 60px 50px 40px;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--green-dark);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .ranking-data-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 38px 30px 60px 50px 40px;
+    gap: 4px;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 13px;
+  }
+  .ranking-data-row:last-child { border-bottom: none; }
+  .rank-pos {
+    font-size: 16px;
+    font-weight: 800;
+    text-align: center;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .rank-pos.gold { background: var(--gold); color: #5c3a00; }
+  .rank-pos.silver { background: var(--silver); color: #333; }
+  .rank-pos.bronze { background: var(--bronze); color: white; }
+  .rank-team-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .rank-cell {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .rank-cell.pts {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--green);
+  }
+  .rank-cell.small { font-size: 11px; color: var(--text-2); }
+
+  /* Summary stats */
+  .summary-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .summary-stat {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .summary-stat-label {
+    font-size: 10px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .summary-stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--green-dark);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 20px);
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.4);
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.92); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px 20px 20px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .modal-text { font-size: 14px; color: var(--text-2); margin-bottom: 20px; }
+  .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-btn {
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .modal-btn.cancel { background: var(--surface-2); color: var(--text); }
+  .modal-btn.confirm { background: var(--red); color: white; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: calc(var(--safe-top) + 20px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
 </style>
-
-<div class="container">
-  <div class="app-header">
-    <div>
-      <div class="app-title">⚽ Tournoi football</div>
-      <div class="app-subtitle" id="appSubtitle">6 équipes · 0 match</div>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-top">
+      <h1 class="header-title">
+        <span class="header-icon">⚽</span>
+        <span>Tournoi</span>
+      </h1>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="showResetModal()" title="Réinitialiser">⟲</button>
+      </div>
     </div>
-    <button class="reset-btn" onclick="resetAll()">Réinitialiser</button>
-  </div>
+    <div class="header-stats">
+      <span class="header-stat"><span>🏆</span> <span id="headerTeams">6 équipes</span></span>
+      <span class="header-stat"><span>📋</span> <span id="headerMatches">0 match</span></span>
+      <span class="header-stat"><span>✅</span> <span id="headerDone">0 terminé</span></span>
+    </div>
+  </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('live')">Match en cours</button>
-    <button class="tab-btn" onclick="switchTab('all')">Tous les matchs</button>
-    <button class="tab-btn" onclick="switchTab('ranking')">Classement</button>
-  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="live" onclick="switchTab('live')">
+      <span class="tab-icon">⏱️</span>
+      Match
+    </button>
+    <button class="tab" data-tab="all" onclick="switchTab('all')">
+      <span class="tab-icon">📋</span>
+      Liste
+    </button>
+    <button class="tab" data-tab="ranking" onclick="switchTab('ranking')">
+      <span class="tab-icon">🏆</span>
+      Classement
+    </button>
+  </nav>
 
-  <div id="live" class="tab-content active">
-    <div id="liveEditor"></div>
-  </div>
+  <main class="content">
+    <div id="live" class="tab-content active">
+      <div id="liveEditor"></div>
+    </div>
 
-  <div id="all" class="tab-content">
-    <div class="matches-list" id="matchesList"></div>
-    <button class="btn-add" onclick="addAndOpenMatch()">+ Nouveau match</button>
-  </div>
+    <div id="all" class="tab-content">
+      <div id="matchesList"></div>
+    </div>
 
-  <div id="ranking" class="tab-content">
-    <div class="stats-summary" id="statsSummary"></div>
-    <div id="rankingContainer"></div>
+    <div id="ranking" class="tab-content">
+      <div id="summaryStats"></div>
+      <div id="rankingContainer"></div>
+    </div>
+  </main>
+
+  <button class="fab" id="fab" onclick="addAndOpenMatch()" title="Nouveau match">+</button>
+</div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <div class="modal-title">Réinitialiser le tournoi ?</div>
+    <div class="modal-text">Tous les matchs seront supprimés. Cette action est irréversible.</div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="hideResetModal()">Annuler</button>
+      <button class="modal-btn confirm" onclick="confirmReset()">Réinitialiser</button>
+    </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
   const TEAMS = ['1-A', '1-B', '2-A', '2-B', '3-A', '3-B'];
-  
+  const STORAGE_KEY = 'footballTournament_v2';
+
   let matches = [];
   let matchIdCounter = 0;
   let activeMatchId = null;
 
   function loadState() {
     try {
-      const saved = localStorage.getItem('footballTournament');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const state = JSON.parse(saved);
         matches = state.matches || [];
         matchIdCounter = state.counter || 0;
         activeMatchId = state.active || null;
       }
-    } catch(e) {}
+    } catch(e) { console.error(e); }
   }
 
   function saveState() {
     try {
-      localStorage.setItem('footballTournament', JSON.stringify({
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
         matches, counter: matchIdCounter, active: activeMatchId
       }));
-    } catch(e) {}
+    } catch(e) { console.error(e); }
+  }
+
+  function showToast(message) {
+    const t = document.getElementById('toast');
+    t.textContent = message;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function vibrate(ms = 15) {
+    if (navigator.vibrate) navigator.vibrate(ms);
   }
 
   function newMatch() {
@@ -188,19 +801,26 @@
     activeMatchId = id;
     saveState();
     switchTab('live');
+    showToast('Nouveau match créé');
+    vibrate();
   }
 
   function deleteMatch(id) {
     matches = matches.filter(m => m.id !== id);
-    if (activeMatchId === id) activeMatchId = null;
+    if (activeMatchId === id) {
+      activeMatchId = matches.length > 0 ? matches[matches.length - 1].id : null;
+    }
     saveState();
     renderAll();
+    showToast('Match supprimé');
+    vibrate(20);
   }
 
   function openMatch(id) {
     activeMatchId = id;
     saveState();
     switchTab('live');
+    vibrate();
   }
 
   function getTeamStats(match, isTeam1) {
@@ -221,6 +841,7 @@
     m[field] = Math.max(0, m[field] + delta);
     saveState();
     renderAll();
+    vibrate(delta > 0 ? 10 : 8);
   }
 
   function updateMatch(matchId, field, value) {
@@ -237,26 +858,38 @@
     m.result = m.result === result ? 'pending' : result;
     saveState();
     renderAll();
+    vibrate(25);
+    if (m.result !== 'pending') showToast('Résultat enregistré');
   }
 
   function renderLiveEditor() {
     const container = document.getElementById('liveEditor');
     let match = matches.find(m => m.id === activeMatchId);
-    
+
     if (!match) {
       if (matches.length === 0) {
         container.innerHTML = `
-          <div class="empty-state" style="margin-bottom: 1rem;">
-            Aucun match créé. Commencez votre tournoi !
+          <div class="card card-padding">
+            <div class="empty">
+              <div class="empty-icon">⚽</div>
+              <div class="empty-title">Prêt pour le coup d'envoi ?</div>
+              <div class="empty-text">Créez votre premier match pour commencer le tournoi</div>
+            </div>
+            <button class="btn-primary" onclick="addAndOpenMatch()">
+              <span>▶</span> Démarrer le tournoi
+            </button>
           </div>
-          <button class="btn-add" onclick="addAndOpenMatch()">+ Premier match</button>
         `;
       } else {
         container.innerHTML = `
-          <div class="empty-state" style="margin-bottom: 1rem;">
-            Sélectionnez un match dans l'onglet "Tous les matchs"
+          <div class="card card-padding">
+            <div class="empty">
+              <div class="empty-icon">📋</div>
+              <div class="empty-title">Aucun match sélectionné</div>
+              <div class="empty-text">Choisissez un match dans la liste ou créez-en un nouveau</div>
+            </div>
+            <button class="btn-primary" onclick="addAndOpenMatch()">+ Nouveau match</button>
           </div>
-          <button class="btn-add" onclick="addAndOpenMatch()">+ Nouveau match</button>
         `;
       }
       return;
@@ -267,29 +900,45 @@
     const s2 = getTeamStats(match, false);
 
     container.innerHTML = `
-      <div class="editor">
-        <div class="editor-title">Match ${idx + 1}</div>
-        
-        <div class="team-selectors">
-          <select onchange="updateMatch(${match.id}, 'team1', this.value)">
-            ${TEAMS.map(t => `<option ${t === match.team1 ? 'selected' : ''}>${t}</option>`).join('')}
-          </select>
-          <span class="vs-text">VS</span>
-          <select onchange="updateMatch(${match.id}, 'team2', this.value)">
-            ${TEAMS.map(t => `<option ${t === match.team2 ? 'selected' : ''}>${t}</option>`).join('')}
-          </select>
+      <div class="card card-padding">
+        <div class="team-versus">
+          <div class="team-select-wrap">
+            <select onchange="updateMatch(${match.id}, 'team1', this.value)">
+              ${TEAMS.map(t => `<option value="${t}" ${t === match.team1 ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="vs-text">VS</div>
+          <div class="team-select-wrap">
+            <select onchange="updateMatch(${match.id}, 'team2', this.value)">
+              ${TEAMS.map(t => `<option value="${t}" ${t === match.team2 ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+          </div>
         </div>
 
         <div class="live-score">
-          <div class="live-score-row">
-            <div class="live-team-left">
-              <div class="live-team-name">${match.team1}</div>
-              <div class="live-score-value">${s1.but}</div>
+          <div class="live-score-grid">
+            <div class="score-team-block">
+              <div class="score-team-name">${match.team1}</div>
+              <div class="score-value">${s1.but}</div>
             </div>
-            <div class="live-divider">−</div>
-            <div class="live-team-right">
-              <div class="live-team-name">${match.team2}</div>
-              <div class="live-score-value">${s2.but}</div>
+            <div class="score-divider">−</div>
+            <div class="score-team-block">
+              <div class="score-team-name">${match.team2}</div>
+              <div class="score-value">${s2.but}</div>
+            </div>
+          </div>
+          <div class="live-meta">
+            <div class="live-meta-item">
+              <span class="live-meta-label">Bonus ${match.team1}</span>
+              <span class="live-meta-value ${s1.hasBonus ? 'bonus-active' : ''}">
+                ${s1.totalPossessions === 0 ? '—' : s1.ratio + '%' + (s1.hasBonus ? ' ✓' : '')}
+              </span>
+            </div>
+            <div class="live-meta-item" style="text-align: right;">
+              <span class="live-meta-label">Bonus ${match.team2}</span>
+              <span class="live-meta-value ${s2.hasBonus ? 'bonus-active' : ''}">
+                ${s2.totalPossessions === 0 ? '—' : s2.ratio + '%' + (s2.hasBonus ? ' ✓' : '')}
+              </span>
             </div>
           </div>
         </div>
@@ -300,14 +949,18 @@
         <div class="result-section">
           <div class="result-label">Résultat final</div>
           <div class="result-buttons">
-            <button class="result-btn ${match.result === 'team1_win' ? 'active' : ''}" onclick="setResult(${match.id}, 'team1_win')">${match.team1}</button>
-            <button class="result-btn ${match.result === 'draw' ? 'active' : ''}" onclick="setResult(${match.id}, 'draw')">Nul</button>
-            <button class="result-btn ${match.result === 'team2_win' ? 'active' : ''}" onclick="setResult(${match.id}, 'team2_win')">${match.team2}</button>
+            <button class="result-btn ${match.result === 'team1_win' ? 'active' : ''}" onclick="setResult(${match.id}, 'team1_win')">
+              ${match.team1} gagne
+            </button>
+            <button class="result-btn ${match.result === 'draw' ? 'active' : ''}" onclick="setResult(${match.id}, 'draw')">
+              Match nul
+            </button>
+            <button class="result-btn ${match.result === 'team2_win' ? 'active' : ''}" onclick="setResult(${match.id}, 'team2_win')">
+              ${match.team2} gagne
+            </button>
           </div>
         </div>
       </div>
-      
-      <button class="btn-add" onclick="addAndOpenMatch()">+ Nouveau match</button>
     `;
   }
 
@@ -315,17 +968,18 @@
     const prefix = isTeam1 ? 'team1' : 'team2';
     const teamName = isTeam1 ? match.team1 : match.team2;
     const bonusClass = stats.hasBonus ? 'bonus' : '';
-    const bonusText = stats.totalPossessions === 0 ? '' : 
-      `${stats.totalShots}/${stats.totalPossessions} possessions · ${stats.ratio}% ${stats.hasBonus ? '✓ bonus' : ''}`;
-    
+    const bonusText = stats.totalPossessions === 0 ? '—' :
+      `${stats.totalShots}/${stats.totalPossessions} · ${stats.ratio}%${stats.hasBonus ? ' ✓' : ''}`;
+
     return `
-      <div class="team-block">
-        <div class="team-block-header">
-          <div class="team-block-name">${teamName}</div>
-          <div class="team-block-ratio ${bonusClass}">${bonusText}</div>
+      <div class="team-section">
+        <div class="team-section-header">
+          <div class="team-section-name">${teamName}</div>
+          <div class="team-section-ratio ${bonusClass}">${bonusText}</div>
         </div>
         <div class="counters">
           <div class="counter">
+            <div class="counter-icon">❌</div>
             <div class="counter-label">Pertes</div>
             <div class="counter-value">${stats.perte}</div>
             <div class="counter-buttons">
@@ -334,6 +988,7 @@
             </div>
           </div>
           <div class="counter">
+            <div class="counter-icon">🎯</div>
             <div class="counter-label">Tirs ratés</div>
             <div class="counter-value">${stats.tireRate}</div>
             <div class="counter-buttons">
@@ -341,7 +996,8 @@
               <button class="counter-btn" onclick="increment(${match.id}, '${prefix}_tire_rate', 1)">+</button>
             </div>
           </div>
-          <div class="counter goal">
+          <div class="counter but">
+            <div class="counter-icon">⚽</div>
             <div class="counter-label">Buts</div>
             <div class="counter-value">${stats.but}</div>
             <div class="counter-buttons">
@@ -356,9 +1012,17 @@
 
   function renderMatchesList() {
     const container = document.getElementById('matchesList');
-    
+
     if (matches.length === 0) {
-      container.innerHTML = '<div class="empty-state">Aucun match enregistré</div>';
+      container.innerHTML = `
+        <div class="card card-padding">
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">Aucun match</div>
+            <div class="empty-text">Appuyez sur + pour créer votre premier match</div>
+          </div>
+        </div>
+      `;
       return;
     }
 
@@ -367,27 +1031,27 @@
       const s2 = getTeamStats(m, false);
       const isActive = m.id === activeMatchId;
       const isDone = m.result !== 'pending';
-      
+
       let team1Class = '', team2Class = '';
       if (m.result === 'team1_win') { team1Class = 'winner'; team2Class = 'loser'; }
       else if (m.result === 'team2_win') { team1Class = 'loser'; team2Class = 'winner'; }
-      
+
       return `
-        <div class="match-summary ${isActive ? 'active' : ''} ${isDone ? 'completed' : ''}">
-          <div class="match-top">
-            <span class="match-num">Match ${idx + 1}</span>
-            <span class="match-status ${isDone ? 'status-done' : 'status-pending'}">
-              ${isDone ? 'Terminé' : 'En cours'}
+        <div class="match-item ${isActive ? 'active' : ''}">
+          <div class="match-item-top">
+            <span class="match-item-num">Match ${idx + 1}</span>
+            <span class="match-item-status ${isDone ? 'status-done' : 'status-pending'}">
+              ${isDone ? '✓ Terminé' : 'En cours'}
             </span>
           </div>
-          <div class="match-teams" onclick="openMatch(${m.id})">
-            <div class="match-team left ${team1Class}">${m.team1}</div>
-            <div class="match-score">${s1.but} − ${s2.but}</div>
-            <div class="match-team right ${team2Class}">${m.team2}</div>
+          <div class="match-item-body" onclick="openMatch(${m.id})">
+            <div class="match-team-side ${team1Class}">${m.team1}</div>
+            <div class="match-score-display">${s1.but} − ${s2.but}</div>
+            <div class="match-team-side ${team2Class}">${m.team2}</div>
           </div>
-          <div class="match-actions">
-            <button onclick="openMatch(${m.id})">Modifier</button>
-            <button class="danger" onclick="deleteMatch(${m.id})">Supprimer</button>
+          <div class="match-item-actions">
+            <button onclick="openMatch(${m.id})">✏️ Modifier</button>
+            <button class="danger" onclick="if(confirm('Supprimer ce match ?')) deleteMatch(${m.id})">🗑 Supprimer</button>
           </div>
         </div>
       `;
@@ -404,7 +1068,7 @@
   function calculateStandings() {
     const standings = {};
     TEAMS.forEach(team => {
-      standings[team] = { team, pts: 0, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, tirRate: 0, perte: 0 };
+      standings[team] = { team, pts: 0, played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0 };
     });
 
     matches.forEach(m => {
@@ -415,14 +1079,10 @@
 
       standings[m.team1].gf += s1.but;
       standings[m.team1].ga += s2.but;
-      standings[m.team1].tirRate += s1.tireRate;
-      standings[m.team1].perte += s1.perte;
       standings[m.team1].played++;
 
       standings[m.team2].gf += s2.but;
       standings[m.team2].ga += s1.but;
-      standings[m.team2].tirRate += s2.tireRate;
-      standings[m.team2].perte += s2.perte;
       standings[m.team2].played++;
 
       if (m.result === 'team1_win') {
@@ -455,90 +1115,133 @@
   function renderRanking() {
     const standing = calculateStandings();
     const container = document.getElementById('rankingContainer');
-    const summary = document.getElementById('statsSummary');
-    
+    const summaryEl = document.getElementById('summaryStats');
+
     const completedMatches = matches.filter(m => m.result !== 'pending').length;
     const totalGoals = matches.reduce((sum, m) => sum + m.team1_but + m.team2_but, 0);
-    
-    summary.innerHTML = `
-      <div class="stat-summary">
-        <div class="stat-summary-label">Matchs joués</div>
-        <div class="stat-summary-value">${completedMatches}</div>
-      </div>
-      <div class="stat-summary">
-        <div class="stat-summary-label">Buts marqués</div>
-        <div class="stat-summary-value">${totalGoals}</div>
+    const avgGoals = completedMatches > 0 ? (totalGoals / completedMatches).toFixed(1) : '0';
+
+    summaryEl.innerHTML = `
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-stat-label">Matchs</div>
+          <div class="summary-stat-value">${completedMatches}</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-label">Buts</div>
+          <div class="summary-stat-value">${totalGoals}</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-label">Moy/match</div>
+          <div class="summary-stat-value">${avgGoals}</div>
+        </div>
       </div>
     `;
-    
+
     if (standing.every(s => s.played === 0)) {
-      container.innerHTML = '<div class="empty-state">Le classement apparaîtra après le premier match terminé</div>';
+      container.innerHTML = `
+        <div class="card card-padding">
+          <div class="empty">
+            <div class="empty-icon">🏆</div>
+            <div class="empty-title">Classement vide</div>
+            <div class="empty-text">Le classement apparaîtra après le premier match terminé</div>
+          </div>
+        </div>
+      `;
       return;
     }
 
     const headerRow = `
-      <div class="ranking-header">
+      <div class="ranking-header-row">
         <div></div>
         <div>Équipe</div>
-        <div class="rank-cell">Pts</div>
-        <div class="rank-cell">J</div>
-        <div class="rank-cell">G/N/P</div>
-        <div class="rank-cell">Buts</div>
-        <div class="rank-cell">Diff</div>
+        <div style="text-align:center;">Pts</div>
+        <div style="text-align:center;">J</div>
+        <div style="text-align:center;">G/N/P</div>
+        <div style="text-align:center;">Buts</div>
+        <div style="text-align:center;">Diff</div>
       </div>
     `;
 
     const rows = standing.map((s, idx) => {
-      const rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+      let rankClass = '';
+      if (idx === 0) rankClass = 'gold';
+      else if (idx === 1) rankClass = 'silver';
+      else if (idx === 2) rankClass = 'bronze';
+
       const diff = s.gf - s.ga;
       const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
-      
+      const diffColor = diff > 0 ? 'color: var(--green);' : diff < 0 ? 'color: var(--red);' : '';
+
       return `
-        <div class="ranking-row">
+        <div class="ranking-data-row">
           <div class="rank-pos ${rankClass}">${idx + 1}</div>
-          <div class="rank-team">${s.team}</div>
+          <div class="rank-team-name">${s.team}</div>
           <div class="rank-cell pts">${s.pts}</div>
           <div class="rank-cell">${s.played}</div>
-          <div class="rank-cell" style="font-size: 11px;">${s.wins}/${s.draws}/${s.losses}</div>
+          <div class="rank-cell small">${s.wins}/${s.draws}/${s.losses}</div>
           <div class="rank-cell">${s.gf}:${s.ga}</div>
-          <div class="rank-cell">${diffStr}</div>
+          <div class="rank-cell" style="${diffColor} font-weight: 700;">${diffStr}</div>
         </div>
       `;
     }).join('');
 
-    container.innerHTML = headerRow + rows;
+    container.innerHTML = `<div class="ranking-card">${headerRow}${rows}</div>`;
   }
 
-  function updateSubtitle() {
+  function updateHeader() {
     const done = matches.filter(m => m.result !== 'pending').length;
-    document.getElementById('appSubtitle').textContent = `6 équipes · ${matches.length} match${matches.length > 1 ? 's' : ''} · ${done} terminé${done > 1 ? 's' : ''}`;
+    document.getElementById('headerMatches').textContent = `${matches.length} match${matches.length > 1 ? 's' : ''}`;
+    document.getElementById('headerDone').textContent = `${done} terminé${done > 1 ? 's' : ''}`;
   }
 
   function renderAll() {
     renderLiveEditor();
     renderMatchesList();
     renderRanking();
-    updateSubtitle();
+    updateHeader();
   }
 
   function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.getElementById(tab).classList.add('active');
-    const btn = document.querySelector(`button[onclick="switchTab('${tab}')"]`);
-    if (btn) btn.classList.add('active');
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+    document.querySelector('.content').scrollTop = 0;
   }
 
-  function resetAll() {
-    if (confirm('Réinitialiser le tournoi ? Tous les matchs seront supprimés.')) {
-      matches = [];
-      matchIdCounter = 0;
-      activeMatchId = null;
-      saveState();
-      renderAll();
-    }
+  function showResetModal() {
+    document.getElementById('resetModal').classList.add('show');
   }
 
+  function hideResetModal() {
+    document.getElementById('resetModal').classList.remove('show');
+  }
+
+  function confirmReset() {
+    matches = [];
+    matchIdCounter = 0;
+    activeMatchId = null;
+    saveState();
+    renderAll();
+    hideResetModal();
+    switchTab('live');
+    showToast('Tournoi réinitialisé');
+    vibrate(30);
+  }
+
+  // Prevent pull-to-refresh and double-tap zoom
+  document.addEventListener('touchmove', (e) => {
+    if (e.scale && e.scale !== 1) e.preventDefault();
+  }, { passive: false });
+  let lastTap = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) e.preventDefault();
+    lastTap = now;
+  });
+
+  // Init
   loadState();
   if (matches.length === 0) {
     addMatch();
@@ -546,3 +1249,5 @@
   }
   renderAll();
 </script>
+</body>
+</html>
